@@ -39,7 +39,7 @@ class StyleEncoder(nn.Module):
 
 
 class StyleEmbEncoder(nn.Module):
-    r""" Uses the nn.Embedding function to emmbed the given "hyperparameter"
+    r""" Uses the nn.Embedding function to embed the given "hyperparameter"
     
     Methods:
         __init__(self, num_hyperparameters, em_size, num_embeddings=100):
@@ -75,6 +75,7 @@ class StyleEmbEncoder(nn.Module):
                 num_hyperparameters: number of input features to embed
                 em_size: Embedding output size
                 num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
+                                    Ugne: I agree, no. of classes in our case. Like if we're embedding digits 0,...,9 then num_embeddings=10 - no. of distinct emeddings, one for each digit
                 """
                 
         super().__init__()
