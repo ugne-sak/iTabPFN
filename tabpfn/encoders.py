@@ -8,6 +8,27 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 
 class StyleEncoder(nn.Module):
+    r""" 
+    Creates a linear layer and encodes the vector passed through.
+        Methods:
+        __init__(self, num_hyperparameters, em_size): 
+        
+            Initiates the Linear layer which encodes the number/vector passed through forward
+            
+            Args:
+                Num_hyperparameters: Number of input layers
+                em_size: embedded feature size
+            
+        forward:
+            
+            The hyperparameter vector is passed through and the encoded vector is returned.
+            
+            Args:
+                hyperparameters: vector to be linearly encoded.
+            Output: 
+                Embedded Vector
+    """
+    
     def __init__(self, num_hyperparameters, em_size):
         super().__init__()
         self.em_size = em_size
@@ -18,13 +39,63 @@ class StyleEncoder(nn.Module):
 
 
 class StyleEmbEncoder(nn.Module):
+    r""" Uses the nn.Embedding function to emmbed the given "hyperparameter"
+    
+    Methods:
+        __init__(self, num_hyperparameters, em_size, num_embeddings=100):
+            
+            Initiates the embedder from nn.Embedding
+            
+            Args:
+
+                num_hyperparameters: number of input features to embed
+                em_size: Embedding output size
+                num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
+                
+        forward(self, hyperparameters):
+            Forwards the features and embeds them according to the nn.Encoder
+            
+            Args: 
+            
+                hyperparameters: Input vector to encode
+                
+            Output:
+                Tensor that is passed through 
+    
+    """
     def __init__(self, num_hyperparameters, em_size, num_embeddings=100):
+        
+        r"""
+            __init__(self, num_hyperparameters, em_size, num_embeddings=100):
+            
+            Initiates the embedder from nn.Embedding
+            
+            Args:
+
+                num_hyperparameters: number of input features to embed
+                em_size: Embedding output size
+                num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
+                """
+                
         super().__init__()
         assert num_hyperparameters == 1
         self.em_size = em_size
         self.embedding = nn.Embedding(num_embeddings, self.em_size)
 
     def forward(self, hyperparameters):  # B x num_hps
+        
+        r"""        
+        
+        forward(self, hyperparameters):
+            Forwards the batch of features and embeds them according to the nn.Encoder
+            
+            Args: 
+                hyperparameters: Input vector to encode (Batch x number of features)
+                
+            Output:
+                Tensor that is passed through 
+        """
+        
         return self.embedding(hyperparameters.squeeze(1))
 
 
@@ -63,6 +134,18 @@ class EmbeddingEncoder(nn.Module):
         return self.min_max[1] - self.min_max[0]
 
     def init_weights(self, initrange):
+
+        r"""
+        Initiates the embedding weights.
+        
+            Args: 
+                initrange: The weights are initiated between (-initrange, initrange)
+                
+            Output:
+                The nn.Embedding with randomly allocated weights uniformly sampled between (-initrange, initrange)
+                
+        """
+        
         self.embeddings.weight.data.uniform_(-initrange, initrange)
 
     def discretize(self, x):
@@ -70,6 +153,11 @@ class EmbeddingEncoder(nn.Module):
         return (x - self.min_max[0] // split_size).int().clamp(0, self.num_embs - 1)
 
     def forward(self, x):  # T x B x num_features
+       
+        r"""
+         Train? x Batch x Number of features
+        """
+        
         x_idxs = self.discretize(x)
         x_idxs += torch.arange(x.shape[-1], device=x.device).view(1, 1, -1) * self.num_embs
         # print(x_idxs,self.embeddings.weight.shape)
