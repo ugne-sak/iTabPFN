@@ -5,6 +5,9 @@ import torch
 from torch.nn.modules.transformer import _get_activation_fn, Module, Tensor, Optional, MultiheadAttention, Linear, Dropout, LayerNorm
 from torch.utils.checkpoint import checkpoint
 
+# added by Ugne (before it showed error: F is not defined)
+from torch.nn import functional as F
+
 
 class TransformerEncoderLayer(Module):
     r"""TransformerEncoderLayer is made up of self-attn and feedforward network.
