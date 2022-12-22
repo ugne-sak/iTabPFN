@@ -58,6 +58,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
 
     # 6) this line below is commented out - that's important! if it wasn't, then we'd be doing nn.Embedding() from torch to encode datapoints
     #    now with this line commented out we're doing a simple encoding with nn.Linear() from torch
+    #    still not sure what style_def would be, not sure what can dl.get_test_batch()[0][0] return
 
     #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
     style_def = None
