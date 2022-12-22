@@ -173,6 +173,16 @@ def nan_handling_missing_for_a_reason_value(set_value_to_nan=0.0):
     return get_nan_value(float('inf'), set_value_to_nan)
 
 def torch_nanmean(x, axis=0, return_nanshare=False):
+    """Returns the mean of NaN in each column
+
+    Args:
+        x (tensor): Input tensor
+        axis (int, optional): The mean number of nan values in axis. Defaults to 0.
+        return_nanshare (bool): Whether to also return the share of nan values. Default = False
+
+    Returns:
+        tensor: returns the mean (of nan in each column)
+    """
     num = torch.where(torch.isnan(x), torch.full_like(x, 0), torch.full_like(x, 1)).sum(axis=axis)
     value = torch.where(torch.isnan(x), torch.full_like(x, 0), x).sum(axis=axis)
     if return_nanshare:
@@ -180,6 +190,15 @@ def torch_nanmean(x, axis=0, return_nanshare=False):
     return value / num
 
 def torch_nanstd(x, axis=0):
+    """Returns the std of NaN in each column
+
+    Args:
+        x (tensor): Input tensor
+        axis (int, optional): The std of nan values in axis. Defaults to 0 (col).
+
+    Returns:
+        tensor: returns the std (of nan in each column)
+    """
     num = torch.where(torch.isnan(x), torch.full_like(x, 0), torch.full_like(x, 1)).sum(axis=axis)
     value = torch.where(torch.isnan(x), torch.full_like(x, 0), x).sum(axis=axis)
     mean = value / num
@@ -187,6 +206,7 @@ def torch_nanstd(x, axis=0):
     return torch.sqrt(torch.nansum(torch.square(mean_broadcast - x), axis=axis) / (num - 1))
 
 def normalize_data(data, normalize_positions=-1):
+    
     if normalize_positions > 0:
         mean = torch_nanmean(data[:normalize_positions], axis=0)
         std = torch_nanstd(data[:normalize_positions], axis=0) + .000001

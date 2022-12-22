@@ -370,7 +370,23 @@ MLP = lambda num_features, emsize: nn.Sequential(nn.Linear(num_features+1,emsize
                                                  nn.Linear(emsize*2,emsize))
 
 class NanHandlingEncoder(nn.Module):
+    """" Handling missing values - either adding a 0 if keep_nans = False,
+    If keeps_nans = True concatenate num_features dimensions to x, putting -1 for
+    NaN, 1 for +inf, 2 for -inf, normalize the column. Encodes some information
+    about the relative number of nans in the columns? Not sure why they do thi
+    
+    Some connection to nan_handling in utils.py - but unclear because that takes care of
+    NaN values by itself while this is removing NaN values beforeahand.
+    """
     def __init__(self, num_features, emsize, keep_nans=True):
+        """Initiates the Linear layer and the parameters
+
+        Args:
+            num_features (int): Number of input features
+            emsize (int): Number of output features from linear layer
+            keep_nans (bool, optional): Augment the input point x2 with normalized NaN load if false
+            sets NaN to 0.0. Defaults to True.
+        """
         super().__init__()
         self.num_features = 2 * num_features if keep_nans else num_features
         self.emsize = emsize
@@ -378,6 +394,14 @@ class NanHandlingEncoder(nn.Module):
         self.layer = nn.Linear(self.num_features, self.emsize)
 
     def forward(self, x):
+        """Augments x and passes through linear layer
+
+        Args:
+            x (tensor): Input tensor
+
+        Returns:
+            tensor: x passed through Linear layer
+        """
         if self.keep_nans:
             x = torch.cat([torch.nan_to_num(x, nan=0.0), normalize_data(torch.isnan(x) * -1
                                                           + torch.logical_and(torch.isinf(x), torch.sign(x) == 1) * 1
@@ -389,18 +413,37 @@ class NanHandlingEncoder(nn.Module):
 
 
 class Linear(nn.Linear):
+    """Linear Layer that sets NaN values to 0.
+    """
     def __init__(self, num_features, emsize, replace_nan_by_zero=False):
+        """Intiates linear layer with input num_features and out emsize
+
+        Args:
+            num_features (int): Input dimension
+            emsize (int): Output dimension
+            replace_nan_by_zero (bool, optional): If true sets NaN to 0. Defaults to False.
+        """
         super().__init__(num_features, emsize)
         self.num_features = num_features
         self.emsize = emsize
         self.replace_nan_by_zero = replace_nan_by_zero
 
     def forward(self, x):
+        """Passes the x through the linear layer
+
+        Args:
+            x (tensor): x to be passed through
+
+        Returns:
+            tensor: Linear layer output
+        """
         if self.replace_nan_by_zero:
             x = torch.nan_to_num(x, nan=0.0)
         return super().forward(x)
 
     def __setstate__(self, state):
+        """Pickling feature
+        """
         super().__setstate__(state)
         self.__dict__.setdefault('replace_nan_by_zero', True)
 
