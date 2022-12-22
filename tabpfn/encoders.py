@@ -9,6 +9,11 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 class StyleEncoder(nn.Module):
     r"""Creates a linear layer and encodes the vector passed through.
+        So it encodes numerical features (all features at once):
+        * takes a batch of datapoints and looks at all features - so looks at datapoint vectors of length = num_hyperparameters
+        * encodes (linearly) all datapoint vectors into new vectors of length = em_size
+        essentially does the same as class Linear which additionally encodes NaN to 0
+
         Methods:
         __init__(self, num_hyperparameters, em_size): 
         
@@ -55,6 +60,10 @@ class StyleEncoder(nn.Module):
 
 class StyleEmbEncoder(nn.Module):
     r""" Uses the nn.Embedding function to emmbed the given "hyperparameter"
+        So it encodes categorical features (one feature at a time):
+        * takes a batch of datapoints and looks at one feature (assert num_hyperparameters == 1)
+        * encodes all possible values of this feature into vectors of length = em_size
+        * note: max number of distinct values that one feature can get is set to num_embeddings=100 (as I understand)
     
     Methods:
         __init__(self, num_hyperparameters, em_size, num_embeddings=100):
