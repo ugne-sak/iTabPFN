@@ -48,9 +48,17 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
             return single_eval_pos, single_eval_pos + bptt_extra_samples
         else:
             return single_eval_pos, bptt
+    # 5.2) here priordataloader_class = priors.fast_gp.DataLoader - a class from priors/fast_gp.py
+    #      and then they create an object (dl) of class DataLoader:
     dl = priordataloader_class(num_steps=steps_per_epoch, batch_size=batch_size, eval_pos_seq_len_sampler=eval_pos_seq_len_sampler, seq_len_maximum=bptt+(bptt_extra_samples if bptt_extra_samples else 0), device=device, **extra_prior_kwargs_dict)
-
+    
+    # 5.1) here encoder_generator = encoders.Linear - class Linear from encoders.py
+    #      and then they create an object (encoder) of class Linear: 
     encoder = encoder_generator(dl.num_features, emsize)
+
+    # 6) this line below is commented out - that's important! if it wasn't, then we'd be doing nn.Embedding() from torch to encode datapoints
+    #    now with this line commented out we're doing a simple encoding with nn.Linear() from torch
+
     #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
     style_def = None
     #print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
@@ -239,6 +247,10 @@ def _parse_args(config_parser, parser):
 
 
 if __name__ == '__main__':
+    # 1) above: import tabpfn.encoders as encoders - so we already have imported encoders so the content of encoders.py file
+    # 2) below: with this parser basically we're able to set the encoder and y_encoder to specific values (done through command line as I understand?):
+    #     --encoder 'linear' / 'mlp' / 'positional'
+    #     --y_encoder 'linear' / 'mlp' / 'positional'
     config_parser = argparse.ArgumentParser(description='Only used as a first parser for the config file path.')
     config_parser.add_argument('--config')
     parser = argparse.ArgumentParser()
@@ -276,6 +288,8 @@ if __name__ == '__main__':
     if args.nhid is None:
         args.nhid = 2*args.emsize
 
+    # 3.2) we take the value that prior was set to ('gp' / 'ridge' / 'stroke' / 'mix_gp')
+    #      and we set prior to be a DataLoader class(?) from one of the files in folder called priors
     prior = args.__dict__.pop('prior')
 
     if prior == 'gp':
@@ -308,9 +322,8 @@ if __name__ == '__main__':
         raise NotImplementedError(f'loss_function == {loss_function}.')
 
 
-
-    encoder = args.__dict__.pop('encoder')
-    y_encoder = args.__dict__.pop('y_encoder')
+    encoder = args.__dict__.pop('encoder') # sets encoder to the value of dictionary element 'encoder'
+    y_encoder = args.__dict__.pop('y_encoder') # sets y_encoder to the value of dictionary element 'y_encoder'
 
     def get_encoder_generator(encoder):
         if encoder == 'linear':
@@ -323,6 +336,9 @@ if __name__ == '__main__':
             raise NotImplementedError(f'A {encoder} encoder is not valid.')
         return encoder_generator
 
+    # 3.1) we take the value that encoder was set to (one of these: 'linear' / 'mlp' / 'positional')
+    #      and for example if we had --encoder linear, then encoder_generator = encoders.Linear
+    #      so basically we create a class Linear and set encoder_generator to be this class? (there's also this in that file: Linear = nn.Linear)
     encoder_generator = get_encoder_generator(encoder)
     y_encoder_generator = get_encoder_generator(y_encoder)
 
@@ -353,6 +369,8 @@ if __name__ == '__main__':
 
     print("ARGS for `train`:", args.__dict__)
 
+    # 4) and here they add argument encoder_generator to train() function
+    #    so they add encoder_generator = encoders.Linear
     train(prior, criterion, encoder_generator,
           y_encoder_generator=y_encoder_generator, pos_encoder_generator=pos_encoder_generator,
           **args.__dict__)
