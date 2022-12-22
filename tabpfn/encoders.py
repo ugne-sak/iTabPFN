@@ -8,8 +8,7 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 
 class StyleEncoder(nn.Module):
-    r""" 
-    Creates a linear layer and encodes the vector passed through.
+    r"""Creates a linear layer and encodes the vector passed through.
         Methods:
         __init__(self, num_hyperparameters, em_size): 
         
@@ -25,21 +24,37 @@ class StyleEncoder(nn.Module):
             
             Args:
                 hyperparameters: vector to be linearly encoded.
-            Output: 
+            Returns: 
                 Embedded Vector
     """
     
     def __init__(self, num_hyperparameters, em_size):
+        """Initiates numerical embedder
+
+        Args:
+            num_hyperparameters (int): Input dimension
+            em_size (int): Output dimension
+        """
         super().__init__()
         self.em_size = em_size
         self.embedding = nn.Linear(num_hyperparameters, self.em_size)
 
-    def forward(self, hyperparameters):  # B x num_hps
+    def forward(self, hyperparameters):  # Batch x num_hyperparameters
+        """Transforms numerical features
+
+        Args:
+            hyperparameters (Tensor): Dim(Batch, num_hyperparameters) Input to be embedded/transformed
+
+        Returns:
+            Tensor: Linearly embedded (if num_hype = 1) or transformed (if num_hyp > 1)
+        """
+        
         return self.embedding(hyperparameters)
 
 
+
 class StyleEmbEncoder(nn.Module):
-    r""" Uses the nn.Embedding function to embed the given "hyperparameter"
+    r""" Uses the nn.Embedding function to emmbed the given "hyperparameter"
     
     Methods:
         __init__(self, num_hyperparameters, em_size, num_embeddings=100):
@@ -53,7 +68,7 @@ class StyleEmbEncoder(nn.Module):
                 num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
                 
         forward(self, hyperparameters):
-            Forwards the features and embeds them according to the nn.Encoder
+            Forwards the features and embeds them according to the nn.Embedder
             
             Args: 
             
@@ -61,8 +76,7 @@ class StyleEmbEncoder(nn.Module):
                 
             Output:
                 Tensor that is passed through 
-    
-    """
+        """
     def __init__(self, num_hyperparameters, em_size, num_embeddings=100):
         
         r"""
@@ -74,8 +88,7 @@ class StyleEmbEncoder(nn.Module):
 
                 num_hyperparameters: number of input features to embed
                 em_size: Embedding output size
-                num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
-                                    Ugne: I agree, no. of classes in our case. Like if we're embedding digits 0,...,9 then num_embeddings=10 - no. of distinct emeddings, one for each digit
+                num_embeddings=100: The number of "classes" of a categorical feature.
                 """
                 
         super().__init__()
@@ -94,8 +107,9 @@ class StyleEmbEncoder(nn.Module):
                 hyperparameters: Input vector to encode (Batch x number of features)
                 
             Output:
-                Tensor that is passed through 
+                Embdedded Tensor 
         """
+        # Squeeze to remove the numerical features? Not sure
         
         return self.embedding(hyperparameters.squeeze(1))
 
@@ -123,6 +137,9 @@ class _PositionalEncoding(nn.Module):
 Positional = lambda _, emsize: _PositionalEncoding(d_model=emsize)
 
 class EmbeddingEncoder(nn.Module):
+        
+    """I DO NOT THINK THIS GETS USED later down"""
+    
     def __init__(self, num_features, em_size, num_embs=100):
         super().__init__()
         self.num_embs = num_embs
@@ -150,6 +167,12 @@ class EmbeddingEncoder(nn.Module):
         self.embeddings.weight.data.uniform_(-initrange, initrange)
 
     def discretize(self, x):
+        
+        """
+        Splits (-2, +2) equally, takes the interval and floors the x? Then clamps it between 
+        the categorical feature selection between 0 to num_embs - 1?
+        """
+        
         split_size = self.width / self.num_embs
         return (x - self.min_max[0] // split_size).int().clamp(0, self.num_embs - 1)
 
@@ -166,17 +189,39 @@ class EmbeddingEncoder(nn.Module):
 
 
 class Normalize(nn.Module):
+    """Normalizes according to mean and std
+    
+    Args:
+        nn.Module: Inherits nn.Module
+    """
+    
     def __init__(self, mean, std):
+        """Initiates the normalizer
+        
+        Args:
+            mean (vector): mean vector
+            std (vector): std vector
+        """
+        
         super().__init__()
         self.mean = mean
         self.std = std
 
     def forward(self, x):
+        """Returns normalized vector
+
+        Args:
+            x (Tensor): target
+
+        Returns:
+            vector: normalized target vector
+        """
         return (x-self.mean)/self.std
 
 
 def get_normalized_uniform_encoder(encoder_creator):
-    """
+    """ Returns a function of a that normalizes inputs before hand
+    
     This can be used to wrap an encoder that is fed uniform samples in [0,1] and normalizes these to 0 mean and 1 std.
     For example, it can be used as `encoder_creator = get_normalized_uniform_encoder(encoders.Linear)`, now this can
     be initialized with `encoder_creator(feature_dim, in_dim)`.
@@ -187,15 +232,34 @@ def get_normalized_uniform_encoder(encoder_creator):
 
 
 def get_normalized_encoder(encoder_creator, data_std):
+    """
+    Args:
+        encoder_creator (nn.Module): A neural network layer module
+        data_std (real): Standard deviation vector
+
+    Returns:
+        function: Intakes in_dim and out_dim and gives layers defined by encoder creator whose std is scaled to 1.
+    """
     return lambda in_dim, out_dim: nn.Sequential(Normalize(0., data_std), encoder_creator(in_dim, out_dim))
 
 
 class ZNormalize(nn.Module):
+    """Gives Z score of vector x (normalizes to 0 mean / variance 1)
+
+    Args:
+        x (tensor):
+    """
     def forward(self, x):
         return (x-x.mean(-1,keepdim=True))/x.std(-1,keepdim=True)
 
 
 class AppendEmbeddingEncoder(nn.Module):
+    """Not sure what this is doing? Especially the last line - appending the encoded vector?
+    nn.Parameter is unclear to me. Where does num_features gets used I am not sure. emsize Embedding size?
+    The tensor gets encoded and appended with some extra features. 
+    
+    I believe this may be used for appending zeroes when passing through the initial layers.
+    """
     def __init__(self, base_encoder, num_features, emsize):
         super().__init__()
         self.num_features = num_features
@@ -216,16 +280,42 @@ class AppendEmbeddingEncoder(nn.Module):
         return encoded_x
 
 def get_append_embedding_encoder(encoder_creator):
+    """Returns the function that allows to increase the dimensionality of the encoded data points
+
+    Args:
+        encoder_creator (nn.Module): an Encoder module
+
+    Returns:
+        function: a lambda function with input dim and output dim as args.
+    """
     return lambda num_features, emsize: AppendEmbeddingEncoder(encoder_creator(num_features, emsize), num_features, emsize)
 
 
 class VariableNumFeaturesEncoder(nn.Module):
+    """Extends the number of features by appending 0s. x is also scaled by:
+        
+            num_real_features/(num_real_features + num_zero_features)
+    """
     def __init__(self, base_encoder, num_features):
+        """Initiates the variable numerical features encoder
+
+        Args:
+            base_encoder (nn.Module): encoder that takes features
+            num_features (_type_): dimensionality intaken by base_encoder
+        """
         super().__init__()
         self.base_encoder = base_encoder
         self.num_features = num_features
 
     def forward(self, x):
+        """Scales x, increases dimensionality with 0s and passes through base_encoder
+
+        Args:
+            x (tensor): numerical input tensor
+
+        Returns:
+            tensor: encoded x_ (where x_ is x appended with 0s)
+        """
         x = x * (self.num_features/x.shape[-1])
         x = torch.cat((x, torch.zeros(*x.shape[:-1], self.num_features - x.shape[-1], device=x.device)), -1)
         return self.base_encoder(x)
@@ -235,20 +325,43 @@ def get_variable_num_features_encoder(encoder_creator):
     return lambda num_features, emsize: VariableNumFeaturesEncoder(encoder_creator(num_features, emsize), num_features)
 
 class NoMeanEncoder(nn.Module):
-    """
+    """Removes column mean and encodes.
+    
     This can be useful for any prior that is translation invariant in x or y.
     A standard GP for example is translation invariant in x.
     That is, GP(x_test+const,x_train+const,y_train) = GP(x_test,x_train,y_train).
     """
     def __init__(self, base_encoder):
+        """Initiates NoMeanEncoder
+
+        Args:
+            base_encoder (nn.Module): Encoder Modules
+        """
         super().__init__()
         self.base_encoder = base_encoder
 
     def forward(self, x):
+        """Takes column mean away and encodes
+
+        Args:
+            x (tensor): translation invariant input
+
+        Returns:
+            tensor: encoded x - x.mean(0, keepdim=True)
+        """
         return self.base_encoder(x - x.mean(0, keepdim=True))
 
 
 def get_no_mean_encoder(encoder_creator):
+
+    """Outputs function that takes input and output dimension of NoMeanEncoder.
+
+    Args:
+        encoder_creator (nn.Module): Encoder Module
+
+    Returns:
+        function: intakes input and output dimension of encoder module
+    """
     return lambda num_features, emsize: NoMeanEncoder(encoder_creator(num_features, emsize))
 
 Linear = nn.Linear
