@@ -102,7 +102,7 @@ class TransformerModel(nn.Module):
         mask[:,train_size:].zero_()
         mask[:,train_size:] |= torch.eye(num_query_tokens) == 1
         return bool_mask_to_att_mask(mask)
-
+        
     @staticmethod
     def generate_global_att_trainset_matrix(num_global_att_tokens, seq_len, num_query_tokens):
         """Directs attention between the trainset: essentially fully connected
