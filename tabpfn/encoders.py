@@ -74,7 +74,7 @@ class StyleEmbEncoder(nn.Module):
 
                 num_hyperparameters: number of input features to embed
                 em_size: Embedding output size
-                num_embeddings=100: Not sure but I imagine its the number of "classes" More information nn.Embedding, first parameter.
+                num_embeddings=100: The number of "classes" - More information nn.Embedding, first parameter.
                 
         forward(self, hyperparameters):
             Forwards the features and embeds them according to the nn.Embedder
@@ -105,7 +105,7 @@ class StyleEmbEncoder(nn.Module):
         self.em_size = em_size
         self.embedding = nn.Embedding(num_embeddings, self.em_size)
 
-    def forward(self, hyperparameters):  # B x num_hps
+    def forward(self, hyperparameters):  # Batch x num_hyperparameters
         
         r"""        
         
