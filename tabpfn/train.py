@@ -356,8 +356,8 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError(f'pos_encoer == {pos_encoder} is not valid.')
 
-    permutation_invariant_max_eval_pos = args.__dict__.pop('permutation_invariant_max_eval_pos')
-    permutation_invariant_sampling = args.__dict__.pop('permutation_invariant_sampling')
+    permutation_invariant_max_eval_pos = args.__dict__.pop('permutation_invariant_max_eval_pos') # set to None
+    permutation_invariant_sampling = args.__dict__.pop('permutation_invariant_sampling') # set to None
     if permutation_invariant_max_eval_pos is not None:
         if permutation_invariant_sampling == 'weighted':
             get_sampler = get_weighted_single_eval_pos_sampler
