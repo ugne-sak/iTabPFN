@@ -85,6 +85,7 @@ class TransformerModel(nn.Module):
 
     @staticmethod
     def generate_global_att_query_matrix(num_global_att_tokens, seq_len, num_query_tokens):
+        
         """Generates matrix with row for each query explaining which points it should attend
         includes itself.
 
