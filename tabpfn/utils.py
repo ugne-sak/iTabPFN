@@ -98,12 +98,30 @@ def get_uniform_single_eval_pos_sampler(max_len, min_len=0):
 
 
 class SeqBN(nn.Module):
+    """Batch Normalization of inputs
+
+    Args:
+        d_model (int): number of features
+    """
     def __init__(self, d_model):
+        """Initiate the BatchNormalization
+
+        Args:
+            d_model (int): number of features
+        """
         super().__init__()
         self.bn = nn.BatchNorm1d(d_model)
         self.d_model = d_model
 
     def forward(self, x):
+        """Normalizes x and returns it in the same shape
+
+        Args:
+            x (tensor): Batch input
+
+        Returns:
+            tensor: normalized x
+        """
         assert self.d_model == x.shape[-1]
         flat_x = x.view(-1, self.d_model)
         flat_x = self.bn(flat_x)
