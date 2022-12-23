@@ -38,7 +38,7 @@ class TransformerModel(nn.Module):
         if num_global_att_tokens is not None: 
             assert not full_attention
         
-        self.global_att_embeddings = nn.Embedding(num_global_att_tokens, ninp) if num_global_att_tokens else None
+        self.global_att_embeddings = nn.Embedding(num_global_att_tokens, ninp) if num_global_att_tokens else None # seems like global_att_embeddings=None
         self.full_attention = full_attention
         self.efficient_eval_masking = efficient_eval_masking
 
@@ -158,8 +158,8 @@ class TransformerModel(nn.Module):
             self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1)
 
         if src_mask is not None: assert self.global_att_embeddings is None or isinstance(src_mask, tuple)
-        if src_mask is None:
-            if self.global_att_embeddings is None:
+        if src_mask is None: # this is RUN: default src_mask=None not changed it seems
+            if self.global_att_embeddings is None: # this is RUN: global_att_embeddings=None it seems
                 full_len = len(x_src) + len(style_src)
                 if self.full_attention:
                     src_mask = bool_mask_to_att_mask(torch.ones((full_len, full_len), dtype=torch.bool)).to(x_src.device)

@@ -56,7 +56,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
     #      and then they create an object (encoder) of class Linear: 
     encoder = encoder_generator(dl.num_features, emsize)
 
-    # 6) this line below is commented out - that's important! if it wasn't, then we'd be doing nn.Embedding() from torch to encode datapoints
+    # 6) (not sure about this comment anymore) this line below is commented out - that's important! if it wasn't, then we'd be doing nn.Embedding() from torch to encode datapoints
     #    now with this line commented out we're doing a simple encoding with nn.Linear() from torch
     #    still not sure what style_def would be, not sure what can dl.get_test_batch()[0][0] return
 
