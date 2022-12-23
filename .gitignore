@@ -161,4 +161,6 @@ cython_debug/
 
 
 #---added by Ugne
-my_files/
+other_files/test_my.ipynb
+other_files/encoders.xlsx
+other_files/~$encoders.xlsx
