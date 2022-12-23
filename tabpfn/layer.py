@@ -120,8 +120,8 @@ class TransformerEncoderLayer(Module):
             else: # so we actually do this part
                 src2 = self.self_attn(src_, src_, src_, attn_mask=src_mask,
                                       key_padding_mask=src_key_padding_mask)[0]
-        src = src + self.dropout1(src2)
-        if not self.pre_norm: # this gets RUN: pre_norm=False so not False is True
+        src = src + self.dropout1(src2) 
+        if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
             src = self.norm1(src)
 
         if self.pre_norm: # NOT RUN: pre_norm=False
@@ -131,6 +131,6 @@ class TransformerEncoderLayer(Module):
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src_))))
         src = src + self.dropout2(src2)
 
-        if not self.pre_norm: # this gets RUN: pre_norm=False so not False is True
+        if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
             src = self.norm2(src)
         return src
