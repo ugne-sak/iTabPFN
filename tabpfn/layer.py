@@ -35,7 +35,7 @@ class TransformerEncoderLayer(Module):
         >>> out = encoder_layer(src)
     """
     __constants__ = ['batch_first']
-
+    # src - batched input
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
                  layer_norm_eps=1e-5, batch_first=False, pre_norm=False,
                  device=None, dtype=None, recompute_attn=False) -> None:
