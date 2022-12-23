@@ -60,7 +60,7 @@ class TransformerEncoderLayer(Module):
 
         self.activation = _get_activation_fn(activation)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state): # not sure what it does
         if 'activation' not in state:
             state['activation'] = F.relu
         super().__setstate__(state)
