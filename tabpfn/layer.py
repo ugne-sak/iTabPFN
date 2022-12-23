@@ -76,15 +76,18 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
-        if self.pre_norm:
+        if self.pre_norm: # NOT RUN: pre_norm=False by default and is not changed in model=TransformerModel() in train.py
             src_ = self.norm1(src)
-        else:
+        else: # this gets RUN
             src_ = src
-        if isinstance(src_mask, tuple):
+        if isinstance(src_mask, tuple): # NOT RUN - AssertionError 
             # global attention setup
-            assert not self.self_attn.batch_first
-            assert src_key_padding_mask is None
-
+            assert not self.self_attn.batch_first # AssertionError when batch_first=True: not True = False  --> so batch_first must be False (and it is - default False is not changed in model=TransformerModel() in train.py)
+            assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
+            
+            # I think this is not run as we get AssertionError: default src_key_padding_mask=None is not changed
+            # so we actually do what's in else (elif also gets AssertionError fot the same reason)
+            
             global_src_mask, trainset_src_mask, valset_src_mask = src_mask
 
             num_global_tokens = global_src_mask.shape[0]
@@ -105,29 +108,29 @@ class TransformerEncoderLayer(Module):
 
             src2 = torch.cat([global_tokens_src2, train_tokens_src2, eval_tokens_src2], dim=0)
 
-        elif isinstance(src_mask, int):
-            assert src_key_padding_mask is None
+        elif isinstance(src_mask, int): # NOT RUN - AssertionError 
+            assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             src_left = self.self_attn(src_[:single_eval_position], src_[:single_eval_position], src_[:single_eval_position])[0]
             src_right = self.self_attn(src_[single_eval_position:], src_[:single_eval_position], src_[:single_eval_position])[0]
             src2 = torch.cat([src_left, src_right], dim=0)
-        else:
-            if self.recompute_attn:
+        else: # this gets RUN 
+            if self.recompute_attn: # recompute_attn=False by default, and is not changed in model=TransformerModel() in train.py)
                 src2 = checkpoint(self.self_attn, src_, src_, src_, src_key_padding_mask, True, src_mask)[0]
-            else:
+            else: # so we actually do this part
                 src2 = self.self_attn(src_, src_, src_, attn_mask=src_mask,
                                       key_padding_mask=src_key_padding_mask)[0]
         src = src + self.dropout1(src2)
-        if not self.pre_norm:
+        if not self.pre_norm: # this gets RUN: pre_norm=False so not False is True
             src = self.norm1(src)
 
-        if self.pre_norm:
+        if self.pre_norm: # NOT RUN: pre_norm=False
             src_ = self.norm2(src)
-        else:
+        else: # this gets RUN
             src_ = src
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src_))))
         src = src + self.dropout2(src2)
 
-        if not self.pre_norm:
+        if not self.pre_norm: # this gets RUN: pre_norm=False so not False is True
             src = self.norm2(src)
         return src
