@@ -85,8 +85,7 @@ class TransformerModel(nn.Module):
 
     @staticmethod
     def generate_global_att_query_matrix(num_global_att_tokens, seq_len, num_query_tokens):
-        """Generates matrix with row for each query explaining which points it should attend
-        includes itself.
+        """Generates matrix with row for each query explaining which points it should attend. Includes itself.
 
         Args:
             num_global_att_tokens (int): 
@@ -106,6 +105,16 @@ class TransformerModel(nn.Module):
 
     @staticmethod
     def generate_global_att_trainset_matrix(num_global_att_tokens, seq_len, num_query_tokens):
+        """Directs attention between the trainset: essentially fully connected
+
+        Args:
+            num_global_att_tokens (int): 
+            seq_len (int): 
+            num_query_tokens (int): 
+
+        Returns:
+            _type_: trainset_size x num_global_tokens
+        """
         train_size = seq_len + num_global_att_tokens - num_query_tokens
         trainset_size = seq_len - num_query_tokens
         mask = torch.zeros(trainset_size, num_global_att_tokens) == 0
