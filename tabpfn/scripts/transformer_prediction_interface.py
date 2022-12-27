@@ -4,8 +4,10 @@ import pathlib
 
 from torch.utils.checkpoint import checkpoint
 
-from tabpfn.utils import normalize_data, to_ranking_low_mem, remove_outliers
-from tabpfn.utils import NOP, normalize_by_used_features_f
+# from tabpfn.utils import normalize_data, to_ranking_low_mem, remove_outliers
+# from tabpfn.utils import NOP, normalize_by_used_features_f
+from utils import normalize_data, to_ranking_low_mem, remove_outliers
+from utils import NOP, normalize_by_used_features_f
 
 from sklearn.preprocessing import PowerTransformer, QuantileTransformer, RobustScaler
 
@@ -16,7 +18,8 @@ from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils import column_or_1d
 from pathlib import Path
-from tabpfn.scripts.model_builder import load_model, load_model_only_inference
+from scripts.model_builder import load_model, load_model_only_inference
+# from tabpfn.scripts.model_builder import load_model, load_model_only_inference
 import os
 import pickle
 import io

@@ -5,7 +5,10 @@ import torch
 from torch import nn
 import numpy as np
 
-from tabpfn.utils import default_device
+# Antanas
+from utils import default_device
+# from tabpfn.utils import default_device
+
 from .utils import get_batch_to_dataloader
 
 class GaussianNoise(nn.Module):
@@ -41,10 +44,10 @@ def get_batch(batch_size, seq_len, num_features, hyperparameters, device=default
                 for key in hyperparameters:
                     setattr(self, key, hyperparameters[key])
 
-                assert (self.num_layers >= 2)
+                # assert (self.num_layers >= 2)
 
                 if 'verbose' in hyperparameters and self.verbose:
-                    print({k : hyperparameters[k] for k in ['is_causal', 'num_causes', 'prior_mlp_hidden_dim'
+                    print({k : hyperparameters[k] for k in ['#', 'num_causes', 'prior_mlp_hidden_dim'
                         , 'num_layers', 'noise_std', 'y_is_effect', 'pre_sample_weights', 'prior_mlp_dropout_prob'
                         , 'pre_sample_causes']})
 
