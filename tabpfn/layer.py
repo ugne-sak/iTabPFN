@@ -46,7 +46,22 @@ class TransformerEncoderLayer(Module):
         super().__init__()
         self.self_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
+        
         # Implementation of Feedforward model
+        
+        ############################## Inter-feature attention ############################################
+        self.pre_linear1 = Linear(1, d_model, **factory_kwargs)
+        self.pre_linear2 = Linear(1, d_model, **factory_kwargs)
+        
+        self.pre_linear3 = Linear(d_model, 1, **factory_kwargs)
+        self.pre_linear4 = Linear(d_model, 1, **factory_kwargs)
+        
+        self.inter_feature_attn_1 = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
+                                            **factory_kwargs)
+        self.inter_feature_attn_2 = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
+                                            **factory_kwargs)
+        ####################################################################################################
+        
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
         self.dropout = Dropout(dropout)
         self.linear2 = Linear(dim_feedforward, d_model, **factory_kwargs)
@@ -111,9 +126,32 @@ class TransformerEncoderLayer(Module):
         elif isinstance(src_mask, int): # NOT RUN - AssertionError 
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
-            src_left = self.self_attn(src_[:single_eval_position], src_[:single_eval_position], src_[:single_eval_position])[0]
-            src_right = self.self_attn(src_[single_eval_position:], src_[:single_eval_position], src_[:single_eval_position])[0]
+            
+            src1 = src_.unsqueeze(-1)
+            
+            # Linear Layers()
+            # Multihead attention for the right and left
+            
+            ################### The interfeature implementation ###########################
+            src_left_ = self.pre_linear1(src1[:single_eval_position]) # 
+            src_right_ = self.pre_linear2(src1[single_eval_position:]) # <- linear layers
+                      
+            src_left_ = self.inter_feature_attn_1(src_left_, src_left_, src_left_)[0] #
+            src_right_ = self.inter_feature_attn_2(src_right_, src_right_, src_right_)[0] # <- interfeature attnetion
+            
+            src_left_ = self.pre_linear3(src_left_) # 
+            src_right_ = self.pre_linear4(src_right_) # <- linear layers to squeeze everything back up
+
+            src_left_ = torch.squeeze(src_left_)
+            src_right_ = torch.squeeze(src_right_, -1) # <- set it back to usual [points, features] tensor
+            ###############################################################################
+            
+            
+            src_left = self.self_attn(src_left_, src_left_, src_left_)[0]
+            src_right = self.self_attn(src_right_, src_left_, src_left_)[0]
+            
             src2 = torch.cat([src_left, src_right], dim=0)
+            
         else: # this gets RUN 
             if self.recompute_attn: # recompute_attn=False by default, and is not changed in model=TransformerModel() in train.py)
                 src2 = checkpoint(self.self_attn, src_, src_, src_, src_key_padding_mask, True, src_mask)[0]
