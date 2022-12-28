@@ -148,29 +148,44 @@ class TransformerModel(nn.Module):
                 nn.init.zeros_(attn.out_proj.bias)
 
     def forward(self, src, src_mask=None, single_eval_pos=None):
+        """Forwards the points through the transformer
+        
+        *This is where we need to insert our inter-feature attention.* 
+
+        Args:
+            src (tuple): (categorical features (optional), x, y)
+            src_mask (tensor, optional): Input mask. Defaults to None - it will be generated within
+            single_eval_pos (int, optional): Determines which data point is evaluated. Defaults to None - last data point
+
+        Returns:
+            tensor: output
+        """
         assert isinstance(src, tuple), 'inputs (src) have to be given as (x,y) or (style,x,y) tuple'
 
         if len(src) == 2: # (x,y) and no style
             src = (None,) + src
 
-        style_src, x_src, y_src = src
-        x_src = self.encoder(x_src)
-        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
+        style_src, x_src, y_src = src # Categorical features, x numerical, and y
+        x_src = self.encoder(x_src) # Numerical encoding of x
+        print(f"This is the size of x_src:{x_src.size()}")
+        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
-            torch.tensor([], device=x_src.device)
+            torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
+        
+        ### Donn't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
-            self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1)
-
+            self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1) 
+            
         if src_mask is not None: assert self.global_att_embeddings is None or isinstance(src_mask, tuple)
-        if src_mask is None: # this is RUN: default src_mask=None not changed it seems
-            if self.global_att_embeddings is None: # this is RUN: global_att_embeddings=None it seems
-                full_len = len(x_src) + len(style_src)
+        if src_mask is None: # this is RUN by default: src_mask=None 
+            if self.global_att_embeddings is None: # this is RUN by default: global_att_embeddings=None
+                full_len = len(x_src) + len(style_src) 
                 if self.full_attention:
-                    src_mask = bool_mask_to_att_mask(torch.ones((full_len, full_len), dtype=torch.bool)).to(x_src.device)
-                elif self.efficient_eval_masking:
+                    src_mask = bool_mask_to_att_mask(torch.ones((full_len, full_len), dtype=torch.bool)).to(x_src.device) # Full attention mask is create - f x f tensor with 0.0
+                elif self.efficient_eval_masking: # This splits the data set into training and evaluation - mask a single number
                     src_mask = single_eval_pos + len(style_src)
                 else:
-                    src_mask = self.generate_D_q_matrix(full_len, len(x_src) - single_eval_pos).to(x_src.device)
+                    src_mask = self.generate_D_q_matrix(full_len, len(x_src) - single_eval_pos).to(x_src.device) # Creates 
             else:
                 src_mask_args = (self.global_att_embeddings.num_embeddings,
                                  len(x_src) + len(style_src),
@@ -179,9 +194,9 @@ class TransformerModel(nn.Module):
                             self.generate_global_att_trainset_matrix(*src_mask_args).to(x_src.device),
                             self.generate_global_att_query_matrix(*src_mask_args).to(x_src.device))
 
-        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
+        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
-
+        print(src.size()) 
         if self.input_ln is not None:
             src = self.input_ln(src)
 

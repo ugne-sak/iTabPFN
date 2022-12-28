@@ -181,7 +181,6 @@ def get_gp_prior_hyperparameters(config):
 def get_meta_gp_prior_hyperparameters(config):
     from priors.utils import trunc_norm_sampler_f
     # from tabpfn.priors.utils import trunc_norm_sampler_f
-
     config = {hp: (list(config[hp].values())[0]) if type(config[hp]) is dict else config[hp] for hp in config}
 
     if "outputscale_mean" in config:
