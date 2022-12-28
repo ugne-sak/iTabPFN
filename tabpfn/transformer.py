@@ -6,8 +6,11 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import Module, TransformerEncoder
 
-from tabpfn.layer import TransformerEncoderLayer, _get_activation_fn
-from tabpfn.utils import SeqBN, bool_mask_to_att_mask
+# Antnas
+# from tabpfn.layer import TransformerEncoderLayer, _get_activation_fn
+# from tabpfn.utils import SeqBN, bool_mask_to_att_mask
+from layer import TransformerEncoderLayer, _get_activation_fn
+from utils import SeqBN, bool_mask_to_att_mask
 
 
 
@@ -57,7 +60,7 @@ class TransformerModel(nn.Module):
         """Generates an upper triangular matrix with -inf and 0.0
 
         Args:
-            sz (int): size
+            sz (int): Batch size
 
         Returns:
             tensor: mask - upper triangular matrix
@@ -72,8 +75,8 @@ class TransformerModel(nn.Module):
         and 0 entries are -inf
 
         Args:
-            sz (int): size of the input - x and y
-            query_size (int): size of x
+            sz (int): batch size
+            query_size (int): number of query
 
         Returns:
             tensor: mask that masks y but attends itself (diagonal 0.0 NOT -inf)
@@ -106,7 +109,7 @@ class TransformerModel(nn.Module):
         
     @staticmethod
     def generate_global_att_trainset_matrix(num_global_att_tokens, seq_len, num_query_tokens):
-        """Directs attention between the trainset: essentially fully connected
+        r"""Directs attention between the trainset: essentially fully connected
 
         Args:
             num_global_att_tokens (int): 
@@ -114,7 +117,7 @@ class TransformerModel(nn.Module):
             num_query_tokens (int): 
 
         Returns:
-            _type_: trainset_size x num_global_tokens
+            tensor: (seq_len + num_global_att_tokens - num_query_tokens) x num_global_tokens
         """
         train_size = seq_len + num_global_att_tokens - num_query_tokens
         trainset_size = seq_len - num_query_tokens

@@ -1,7 +1,10 @@
 import torch
 
 from .utils import get_batch_to_dataloader
-from tabpfn.utils import default_device
+# Antanas 
+from utils import default_device
+# from tabpfn.utils import default_device
+
 
 def get_batch(batch_size, seq_len, num_features, device=default_device
               , hyperparameters=None, batch_size_per_gp_sample=None, **kwargs):
