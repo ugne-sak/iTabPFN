@@ -4,6 +4,7 @@ from torch import nn
 import torch
 from torch.nn.modules.transformer import _get_activation_fn, Module, Tensor, Optional, MultiheadAttention, Linear, Dropout, LayerNorm
 from torch.utils.checkpoint import checkpoint
+from einops import rearrange
 
 # added by Ugne (before it showed error: F is not defined)
 from torch.nn import functional as F
@@ -91,6 +92,7 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
+        print("running forward \\")
         if self.pre_norm: # NOT RUN: pre_norm=False by default and is not changed in model=TransformerModel() in train.py
             src_ = self.norm1(src)
         else: # this gets RUN
@@ -127,26 +129,47 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
-            src1 = src_.unsqueeze(-1)
+            print(f'Single eval position: {single_eval_position}')
             
-            # Linear Layers()
-            # Multihead attention for the right and left
+            print(src_)
             
             ################### The interfeature implementation ###########################
-            src_left_ = self.pre_linear1(src1[:single_eval_position]) # 
-            src_right_ = self.pre_linear2(src1[single_eval_position:]) # <- linear layers
-                      
+            
+            src_left_ = src_[:single_eval_position]
+            src_right_ = src_[single_eval_position:] # <- split the data
+            
+            print(f'Dimensionality of src_: {src_.size()}')
+
+            src_left_ = rearrange(src_left_, 'b h w -> (b h) w 1') #
+            src_right_ = rearrange(src_right_, 'b h w -> (b h) w 1') # <- rearrange for Interfeature attention
+            
+            print(f'Before 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
+
+            src_left_ = self.pre_linear1(src_left_) # 
+            src_right_ = self.pre_linear2(src_right_) # <- linear layers
+            
+            print(f'After 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
+            
             src_left_ = self.inter_feature_attn_1(src_left_, src_left_, src_left_)[0] #
             src_right_ = self.inter_feature_attn_2(src_right_, src_right_, src_right_)[0] # <- interfeature attnetion
-            
+            print(f'After 1st attention layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
+
             src_left_ = self.pre_linear3(src_left_) # 
             src_right_ = self.pre_linear4(src_right_) # <- linear layers to squeeze everything back up
 
-            src_left_ = torch.squeeze(src_left_)
-            src_right_ = torch.squeeze(src_right_, -1) # <- set it back to usual [points, features] tensor
+            print(f'After 2st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
+            
+            src_left_ = rearrange(src_left_, '(b h) w 1 -> b h w', b = single_eval_position)
+            src_right_ = rearrange(src_right_, '(b h) w 1 -> b h w', b = src_.size()[0] - single_eval_position)
+            
+            # src_left_ = torch.squeeze(src_left_)
+            # src_right_ = torch.squeeze(src_right_, -1) # <- set it back to usual [points, features] tensor
+            
+            print(f'After squeeze dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
+
             ###############################################################################
             
-            
+            print(src_left_.size())
             src_left = self.self_attn(src_left_, src_left_, src_left_)[0]
             src_right = self.self_attn(src_right_, src_left_, src_left_)[0]
             
