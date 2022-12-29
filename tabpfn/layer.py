@@ -50,17 +50,21 @@ class TransformerEncoderLayer(Module):
         
         # Implementation of Feedforward model
         
+        # self.pre_linear2 = Linear(1, d_model, **factory_kwargs)
+        # self.pre_linear4 = Linear(d_model, 1, **factory_kwargs)
+        # self.inter_feature_attn_2 = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
+        #                                     **factory_kwargs)
+        # self.pre_norm2 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
+        
         ############################## Inter-feature attention ############################################
         self.pre_linear1 = Linear(1, d_model, **factory_kwargs)
-        self.pre_linear2 = Linear(1, d_model, **factory_kwargs)
+        self.pre_linear2 = Linear(d_model, 1, **factory_kwargs)
         
-        self.pre_linear3 = Linear(d_model, 1, **factory_kwargs)
-        self.pre_linear4 = Linear(d_model, 1, **factory_kwargs)
+        self.inter_feature_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
+                                            **factory_kwargs)
         
-        self.inter_feature_attn_1 = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
-                                            **factory_kwargs)
-        self.inter_feature_attn_2 = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
-                                            **factory_kwargs)
+        self.pre_norm_ = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
+        self.pre_dropout = Dropout(dropout)
         ####################################################################################################
         
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
@@ -131,45 +135,40 @@ class TransformerEncoderLayer(Module):
             
             print(f'Single eval position: {single_eval_position}')
             
-            print(src_)
-            
             ################### The interfeature implementation ###########################
             
             src_left_ = src_[:single_eval_position]
             src_right_ = src_[single_eval_position:] # <- split the data
             
-            print(f'Dimensionality of src_: {src_.size()}')
-
-            src_left_ = rearrange(src_left_, 'b h w -> (b h) w 1') #
-            src_right_ = rearrange(src_right_, 'b h w -> (b h) w 1') # <- rearrange for Interfeature attention
+            src_left_ = rearrange(src_left_, 'b h w -> w (b h) 1') #
+            src_right_ = rearrange(src_right_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
             
             print(f'Before 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
 
-            src_left_ = self.pre_linear1(src_left_) # 
-            src_right_ = self.pre_linear2(src_right_) # <- linear layers
+            src_left_ = self.pre_linear1(src_left_) # <- linear layers
+            src_right_ = self.pre_linear1(src_right_) # <- linear layers
             
             print(f'After 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
             
-            src_left_ = self.inter_feature_attn_1(src_left_, src_left_, src_left_)[0] #
-            src_right_ = self.inter_feature_attn_2(src_right_, src_right_, src_right_)[0] # <- interfeature attnetion
+            src_left_ = self.inter_feature_attn(src_left_, src_left_, src_left_)[0] #
+            src_right_ = self.inter_feature_attn(src_right_, src_right_, src_right_)[0] # <- interfeature attnetion
+            
             print(f'After 1st attention layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
 
-            src_left_ = self.pre_linear3(src_left_) # 
-            src_right_ = self.pre_linear4(src_right_) # <- linear layers to squeeze everything back up
+            src_left_ = self.pre_linear2(src_left_) # 
+            src_right_ = self.pre_linear2(src_right_) # <- linear layers to squeeze everything back up
 
             print(f'After 2st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
             
-            src_left_ = rearrange(src_left_, '(b h) w 1 -> b h w', b = single_eval_position)
-            src_right_ = rearrange(src_right_, '(b h) w 1 -> b h w', b = src_.size()[0] - single_eval_position)
-            
-            # src_left_ = torch.squeeze(src_left_)
-            # src_right_ = torch.squeeze(src_right_, -1) # <- set it back to usual [points, features] tensor
+            src_left_ = rearrange(src_left_, 'w (b h) 1 -> b h w', b = single_eval_position)
+            src_right_ = rearrange(src_right_, 'w (b h) 1 -> b h w', b = src_.size()[0] - single_eval_position)
             
             print(f'After squeeze dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
-
+            
+            src_left_ = self.pre_norm_(src_[:single_eval_position] + self.pre_dropout(src_left_))
+            src_right_ = self.pre_norm_(src_[single_eval_position:] + self.pre_dropout(src_right_)) # <- residual layer
             ###############################################################################
             
-            print(src_left_.size())
             src_left = self.self_attn(src_left_, src_left_, src_left_)[0]
             src_right = self.self_attn(src_right_, src_left_, src_left_)[0]
             
