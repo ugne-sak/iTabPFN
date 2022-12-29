@@ -136,36 +136,25 @@ class TransformerEncoderLayer(Module):
             print(f'Single eval position: {single_eval_position}')
             
             ################### The interfeature implementation ###########################
-            
             src_left_ = src_[:single_eval_position]
             src_right_ = src_[single_eval_position:] # <- split the data
             
             src_left_ = rearrange(src_left_, 'b h w -> w (b h) 1') #
             src_right_ = rearrange(src_right_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            
-            print(f'Before 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
 
-            src_left_ = self.pre_linear1(src_left_) # <- linear layers
+            src_left_ = self.pre_linear1(src_left_) # 
             src_right_ = self.pre_linear1(src_right_) # <- linear layers
-            
-            print(f'After 1st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
             
             src_left_ = self.inter_feature_attn(src_left_, src_left_, src_left_)[0] #
             src_right_ = self.inter_feature_attn(src_right_, src_right_, src_right_)[0] # <- interfeature attnetion
-            
-            print(f'After 1st attention layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
 
             src_left_ = self.pre_linear2(src_left_) # 
             src_right_ = self.pre_linear2(src_right_) # <- linear layers to squeeze everything back up
-
-            print(f'After 2st linear layer dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
             
             src_left_ = rearrange(src_left_, 'w (b h) 1 -> b h w', b = single_eval_position)
-            src_right_ = rearrange(src_right_, 'w (b h) 1 -> b h w', b = src_.size()[0] - single_eval_position)
+            src_right_ = rearrange(src_right_, 'w (b h) 1 -> b h w', b = src_.size()[0] - single_eval_position) 
             
-            print(f'After squeeze dimensions of src_left_ and right_: {src_left_.size(), src_right_.size()}')
-            
-            src_left_ = self.pre_norm_(src_[:single_eval_position] + self.pre_dropout(src_left_))
+            src_left_ = self.pre_norm_(src_[:single_eval_position] + self.pre_dropout(src_left_)) 
             src_right_ = self.pre_norm_(src_[single_eval_position:] + self.pre_dropout(src_right_)) # <- residual layer
             ###############################################################################
             
