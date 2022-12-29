@@ -19,11 +19,24 @@ def ff_encodings(x,B):
 # classes
 
 class Residual(nn.Module):
+    """Residual layer
+
+    Args:
+        fn (function): residual function
+    """
     def __init__(self, fn):
         super().__init__()
         self.fn = fn
 
     def forward(self, x, **kwargs):
+        """
+
+        Args:
+            x (tensor): input
+
+        Returns:
+            tensor: residual output
+        """
         return self.fn(x, **kwargs) + x
 
 class PreNorm(nn.Module):
