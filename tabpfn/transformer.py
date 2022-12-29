@@ -27,8 +27,8 @@ class TransformerModel(nn.Module):
         
         # Initiate n subsequent layers of transformer (initiated all the same or not)
         # all_layers_same_init=False by default and not changed later so we do TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
-        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), nlayers)\
-            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
+        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 1)\
+            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 1)
         self.ninp = ninp
         
         # Store the encoder, decoder modules
@@ -196,7 +196,7 @@ class TransformerModel(nn.Module):
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
-        print(src.size()) 
+
         if self.input_ln is not None:
             src = self.input_ln(src)
 

@@ -135,11 +135,11 @@ class TransformerEncoderLayer(Module):
             
             print(f'Single eval position: {single_eval_position}')
             
-            ################### The InterColumn implementation ###########################
+            ################### The Inter-feature implementation ###########################
             src_left_ = src_[:single_eval_position]
             src_right_ = src_[single_eval_position:] # <- split the data
             
-            src_left_ = rearrange(src_left_, 'b h w -> w (b h') #
+            src_left_ = rearrange(src_left_, 'b h w -> w (b h) 1') #
             src_right_ = rearrange(src_right_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
 
             src_left_ = self.pre_linear1(src_left_) # 
