@@ -161,10 +161,10 @@ cython_debug/
 
 
 #---added by Ugne
-other_files/test_my.ipynb
-other_files/encoders.xlsx
-other_files/~$encoders.xlsx
-other_files/drawings
+files_other/test_my.ipynb
+files_other/encoders.xlsx
+files_other/~$encoders.xlsx
+files_other/drawings
 tabpfn/layer_new.py
 tabpfn/U_attention.ipynb
 tabpfn/U_layer.ipynb
