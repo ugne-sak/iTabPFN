@@ -77,7 +77,6 @@ class TransformerEncoderLayer(Module):
             see the docs in Transformer class.
         """
         
-        print("Forward")
         if self.pre_norm: # NOT RUN: pre_norm=False by default and is not changed in model=TransformerModel() in train.py
             src_ = self.norm1(src)
         else: # this gets RUN
