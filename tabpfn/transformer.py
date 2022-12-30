@@ -27,8 +27,8 @@ class TransformerModel(nn.Module):
         
         # Initiate n subsequent layers of transformer (initiated all the same or not)
         # all_layers_same_init=False by default and not changed later so we do TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
-        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 1)\
-            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 1)
+        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 3)\
+            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 3)
         self.ninp = ninp
         
         # Store the encoder, decoder modules

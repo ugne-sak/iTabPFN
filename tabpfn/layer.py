@@ -96,7 +96,6 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
-        print("running forward \\")
         if self.pre_norm: # NOT RUN: pre_norm=False by default and is not changed in model=TransformerModel() in train.py
             src_ = self.norm1(src)
         else: # this gets RUN
@@ -132,8 +131,6 @@ class TransformerEncoderLayer(Module):
         elif isinstance(src_mask, int): # NOT RUN - AssertionError 
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
-            
-            print(f'Single eval position: {single_eval_position}')
             
             ################### The Inter-feature implementation ###########################
             src_left_ = src_[:single_eval_position]
