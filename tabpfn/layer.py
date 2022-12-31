@@ -132,7 +132,19 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
-            ################### The Inter-feature implementation ###########################
+            """################### The Inter-feature implementation ###########################
+            src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
+            src1 = self.pre_linear1(src1) # <- linear layers
+            src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
+            src1 = self.pre_linear2(src1) # <- linear layers to squeeze everything back up
+            src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
+            src1 = self.pre_norm_(src_ + self.pre_dropout(src1))  # <- residual layer
+            
+            src_left = self.self_attn(src1[:single_eval_position], src1[:single_eval_position], src1[:single_eval_position])[0]
+            src_right = self.self_attn(src1[single_eval_position:], src1[:single_eval_position], src1[:single_eval_position])[0]
+            ###############################################################################"""
+            
+            ################### The Inter-feature implementation Old ##########################
             src_left_ = src_[:single_eval_position]
             src_right_ = src_[single_eval_position:] # <- split the data
             
@@ -153,10 +165,11 @@ class TransformerEncoderLayer(Module):
             
             src_left_ = self.pre_norm_(src_[:single_eval_position] + self.pre_dropout(src_left_)) 
             src_right_ = self.pre_norm_(src_[single_eval_position:] + self.pre_dropout(src_right_)) # <- residual layer
-            ###############################################################################
             
             src_left = self.self_attn(src_left_, src_left_, src_left_)[0]
             src_right = self.self_attn(src_right_, src_left_, src_left_)[0]
+            ############################################################################### 
+
             
             src2 = torch.cat([src_left, src_right], dim=0)
             
