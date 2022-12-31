@@ -60,7 +60,7 @@ class TransformerEncoderLayer(Module):
         self.pre_linear1 = Linear(1, d_model, **factory_kwargs)
         self.pre_linear2 = Linear(d_model, 1, **factory_kwargs)
         
-        self.inter_feature_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
+        self.inter_feature_attn = MultiheadAttention(d_model, 4, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
         
         self.pre_norm_ = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
@@ -132,7 +132,8 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
-            """################### The Inter-feature implementation ###########################
+            ################### The Inter-feature implementation ###########################
+            
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
             src1 = self.pre_linear1(src1) # <- linear layers
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
@@ -142,9 +143,10 @@ class TransformerEncoderLayer(Module):
             
             src_left = self.self_attn(src1[:single_eval_position], src1[:single_eval_position], src1[:single_eval_position])[0]
             src_right = self.self_attn(src1[single_eval_position:], src1[:single_eval_position], src1[:single_eval_position])[0]
-            ###############################################################################"""
             
-            ################### The Inter-feature implementation Old ##########################
+            ###############################################################################
+            
+            """################### The Inter-feature implementation Old ##########################
             src_left_ = src_[:single_eval_position]
             src_right_ = src_[single_eval_position:] # <- split the data
             
@@ -168,8 +170,7 @@ class TransformerEncoderLayer(Module):
             
             src_left = self.self_attn(src_left_, src_left_, src_left_)[0]
             src_right = self.self_attn(src_right_, src_left_, src_left_)[0]
-            ############################################################################### 
-
+            ############################################################################### """
             
             src2 = torch.cat([src_left, src_right], dim=0)
             
