@@ -148,7 +148,7 @@ class TransformerEncoderLayer(Module):
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
-            print(src1_.size())
+
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             
