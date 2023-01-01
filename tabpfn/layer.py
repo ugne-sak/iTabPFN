@@ -138,22 +138,13 @@ class TransformerEncoderLayer(Module):
             
             ################### The Inter-feature implementation ###########################
             
-            print(f"src1 before rearranging {src_.shape}")
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            print(f"src1 after rearranging {src1.shape}")
             src1 = self.pre_linear1(src1) # <- linear layers
-            print(f"src1 after pre_linear1 {src1.shape}")
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
-            print(f"src1 after pre_linear3 {src1.shape}")
-
             src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
-            print(f"src1 after next rearrange {src1.shape}")
-            src1 = self.pre_norm_(self.pre_dropout(src1)) + src_ # <- residual layer
-            
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
-            
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
