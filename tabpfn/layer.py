@@ -152,11 +152,12 @@ class TransformerEncoderLayer(Module):
             print(f"src1 after next rearrange {src1.shape}")
             src1 = self.pre_norm_(self.pre_dropout(src1)) + src_ # <- residual layer
             
-            src1 = self.pre_linear5(self.activation(self.pre_linear4(src1)))
-            print(f"src1 after pre_linear5 {src1.shape}")
+            src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             
-            src_left = self.self_attn(src1[:single_eval_position], src1[:single_eval_position], src1[:single_eval_position])[0]
-            src_right = self.self_attn(src1[single_eval_position:], src1[:single_eval_position], src1[:single_eval_position])[0]
+            src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
+            print(src1_.size())
+            src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
+            src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             
             ###############################################################################
             
@@ -194,16 +195,17 @@ class TransformerEncoderLayer(Module):
             else: # so we actually do this part
                 src2 = self.self_attn(src_, src_, src_, attn_mask=src_mask,
                                       key_padding_mask=src_key_padding_mask)[0]
-        src_o = src1 + self.dropout1(src2) 
+        src_o = self.dropout1(src2) 
         if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
-            src_o = self.norm1(src_o)
+            src_o = self.norm1(src_o + src1_)
 
         if self.pre_norm: # NOT RUN: pre_norm=False
-            src_ = self.norm2(src_o)
+            src_ = self.norm2(src_o + src1_)
         else: # this gets RUN
             src_ = src_o
+            
         src2 = self.linear2(self.activation(self.linear1(src_)))
-        src = src + self.dropout2(src2)
+        src = src1 + self.dropout2(src2)
 
         if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
             src = self.norm2(src)
