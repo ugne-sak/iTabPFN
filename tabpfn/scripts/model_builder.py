@@ -67,7 +67,7 @@ def load_model_only_inference(path, filename, device):
     assert config_sample['max_num_classes'] > 2
     loss = torch.nn.CrossEntropyLoss(reduction='none', weight=torch.ones(int(config_sample['max_num_classes'])))
 
-    model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['nhead'], nhid,
+    model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['emsize_f'], config_sample['nhead'], nhid,
                              config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
                              dropout=config_sample['dropout'],
                              efficient_eval_masking=config_sample['efficient_eval_masking'])
@@ -299,6 +299,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
                   , encoder
                   , style_encoder_generator = encoders.StyleEncoder if use_style else None
                   , emsize=config['emsize']
+                  , emsize_f = config['emsize_f']
                   , nhead=config['nhead']
                   # For unsupervised learning change to NanHandlingEncoder
                   , y_encoder_generator= encoders.get_Canonical(config['max_num_classes']) if config.get('canonical_y_encoder', False) else encoders.Linear
