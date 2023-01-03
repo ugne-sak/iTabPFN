@@ -167,7 +167,7 @@ class TransformerModel(nn.Module):
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
         x_src = self.encoder(x_src) # Numerical encoding of x
-        print(f"This is the size of x_src:{x_src.size()}")
+        #print(f"This is the size of x_src:{x_src.size()}")
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
             torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor

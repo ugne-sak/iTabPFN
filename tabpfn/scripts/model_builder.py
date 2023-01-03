@@ -28,7 +28,7 @@ def save_model(model, path, filename, config_sample):
     #del config_sample['num_classes']
 
     config_sample = make_serializable(config_sample)
-
+    print(config_sample)
     torch.save((model.state_dict(), None, config_sample), os.path.join(path, filename))
 
 
@@ -68,7 +68,7 @@ def load_model_only_inference(path, filename, device):
     loss = torch.nn.CrossEntropyLoss(reduction='none', weight=torch.ones(int(config_sample['max_num_classes'])))
 
     model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['emsize_f'], config_sample['nhead'], nhid,
-                             config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
+                             config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize_f']),
                              dropout=config_sample['dropout'],
                              efficient_eval_masking=config_sample['efficient_eval_masking'])
 
@@ -103,6 +103,7 @@ def load_model(path, filename, device, eval_positions, verbose):
     config_sample['num_features_used'] = lambda: config_sample['num_features']
     config_sample['num_classes_in_training'] = config_sample['num_classes']
     config_sample['num_classes'] = 2
+    config_sample['emsize_f'] = config_sample['emsize_f']
     config_sample['batch_size_in_training'] = config_sample['batch_size']
     config_sample['batch_size'] = 1
     config_sample['bptt_in_training'] = config_sample['bptt']

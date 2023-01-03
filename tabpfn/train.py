@@ -194,7 +194,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
                 nan_steps += nan_share
                 ignore_steps += (targets == -100).float().mean()
 
-            print(f"Time for a batch: {time.time()-before_get_batch}")
+            #print(f"Time for a batch: {time.time()-before_get_batch}")
 
             before_get_batch = time.time()
         return total_loss / steps_per_epoch, (total_positional_losses / total_positional_losses_recorded).tolist(),\
@@ -227,6 +227,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
                 print('-' * 89)
 
             # stepping with wallclock time based scheduler
+            print(not None, rank == 0)
             if epoch_callback is not None and rank == 0:
                 epoch_callback(model, epoch / epochs)
             scheduler.step()

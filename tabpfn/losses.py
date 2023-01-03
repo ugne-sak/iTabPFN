@@ -25,7 +25,7 @@ def JointBCELossWithLogits(output, target):
     # Here at the moment NS = SL
     output = output.unsqueeze(-1).repeat(1, 1, 1, target.shape[-1]) # (S, B, NS, SL)
     output = output.permute(2, 0, 1, 3) # (NS, S, B, SL)
-    print(target.shape, output.shape)
+    #print(target.shape, output.shape)
     loss = (target * torch.sigmoid(output)) + ((1-target) * (1-torch.sigmoid(output)))
     loss = loss.prod(-1)
     loss = loss.mean(0)
