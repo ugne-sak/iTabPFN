@@ -227,7 +227,6 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
                 print('-' * 89)
 
             # stepping with wallclock time based scheduler
-            print(not None, rank == 0)
             if epoch_callback is not None and rank == 0:
                 epoch_callback(model, epoch / epochs)
             scheduler.step()

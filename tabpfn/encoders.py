@@ -139,7 +139,7 @@ class _PositionalEncoding(nn.Module):
         #position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         interval_size = 10
         div_term = (1./interval_size) * 2*math.pi*torch.exp(torch.arange(0, d_per_feature, 2, device=self.device_test_tensor.device).float()*math.log(math.sqrt(2)))
-        #print(div_term/2/math.pi)
+
         pe[..., 0::2] = torch.sin(x.unsqueeze(-1) * div_term)
         pe[..., 1::2] = torch.cos(x.unsqueeze(-1) * div_term)
         return self.dropout(pe).view(x.shape[0],x.shape[1],self.d_model)
@@ -195,7 +195,6 @@ class EmbeddingEncoder(nn.Module):
         
         x_idxs = self.discretize(x)
         x_idxs += torch.arange(x.shape[-1], device=x.device).view(1, 1, -1) * self.num_embs
-        # print(x_idxs,self.embeddings.weight.shape)
         return self.embeddings(x_idxs).mean(-2)
 
 
