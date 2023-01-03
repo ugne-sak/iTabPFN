@@ -28,7 +28,7 @@ def save_model(model, path, filename, config_sample):
     #del config_sample['num_classes']
 
     config_sample = make_serializable(config_sample)
-    print(config_sample)
+
     torch.save((model.state_dict(), None, config_sample), os.path.join(path, filename))
 
 
@@ -58,7 +58,7 @@ def load_model_only_inference(path, filename, device):
     n_out = config_sample['max_num_classes']
 
     device = device if torch.cuda.is_available() else 'cpu:0'
-    encoder = encoder(config_sample['num_features'], config_sample['emsize'])
+    encoder = encoder(config_sample['num_features'], config_sample['emsize_f'])
 
     nhid = config_sample['emsize'] * config_sample['nhid_factor']
     y_encoder_generator = encoders.get_Canonical(config_sample['max_num_classes']) \
