@@ -112,7 +112,7 @@ class TransformerEncoderLayer(Module):
             
             # I think this is not run as we get AssertionError: default src_key_padding_mask=None is not changed
             # so we actually do what's in else (elif also gets AssertionError fot the same reason)
-            print(" This is run ")
+
             global_src_mask, trainset_src_mask, valset_src_mask = src_mask
 
             num_global_tokens = global_src_mask.shape[0]

@@ -27,8 +27,8 @@ class TransformerModel(nn.Module):
         
         # Initiate n subsequent layers of transformer (initiated all the same or not)
         # all_layers_same_init=False by default and not changed later so we do TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
-        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 6)\
-            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 6)
+        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), nlayers)\
+            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
         self.ninp = emsize_f
         
         # Store the encoder, decoder modules
@@ -167,7 +167,6 @@ class TransformerModel(nn.Module):
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
         x_src = self.encoder(x_src) # Numerical encoding of x
-        print(f"This is the size of x_src:{x_src.size()}")
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
             torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
