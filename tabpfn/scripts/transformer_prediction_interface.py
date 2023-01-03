@@ -117,7 +117,7 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
         if model_string in self.models_in_memory:
             model, c, results_file = self.models_in_memory[model_key]
         else:
-            model, c, results_file = load_model_workflow(i, -1, add_name=model_string, base_path=base_path, device=device,
+            model, c, results_file = load_model_workflow(i, 8, add_name=model_string, base_path=base_path, device=device,
                                                          eval_addition='', only_inference=only_inference)
             self.models_in_memory[model_key] = (model, c, results_file)
             if len(self.models_in_memory) == 2:
