@@ -155,9 +155,12 @@ class TransformerEncoderLayer(Module):
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
             print(f"src1_ into inter-sample attn: {src1_.shape}")
 
+            print(f"single_eval_position {single_eval_position}")
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
-            
+            print(f"src_left {src_left.shape}")
+            print(f"src_right {src_right.shape}")
+
             ###############################################################################
             
             """################### The Inter-feature implementation Old ##########################
