@@ -146,6 +146,7 @@ class TransformerEncoderLayer(Module):
             src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
+            print(f"src1_ into inter-sample attn: {src1_.shape}")
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
