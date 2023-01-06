@@ -65,11 +65,15 @@ class TransformerEncoderLayer(Module):
         self.pre_linear2 = Linear(emsize_f, dim_feedforward, **factory_kwargs)
         self.pre_linear3 = Linear(dim_feedforward, 1, **factory_kwargs)
         
-        self.pre_norm_ = LayerNorm(emsize_f, eps=layer_norm_eps, **factory_kwargs)
+        self.pre_norm1 = LayerNorm(emsize_f, eps=layer_norm_eps, **factory_kwargs)
+        self.pre_norm2 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
         self.pre_dropout = Dropout(dropout)
         
         self.pre_linear4 = Linear(emsize_f, dim_feedforward, **factory_kwargs)
         self.pre_linear5 = Linear(dim_feedforward, d_model, **factory_kwargs)
+
+        self.pre_linear6 = Linear(d_model, dim_feedforward, **factory_kwargs)
+        self.pre_linear7 = Linear(dim_feedforward, d_model, **factory_kwargs)
         ####################################################################################################
         
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
@@ -137,19 +141,20 @@ class TransformerEncoderLayer(Module):
             single_eval_position = src_mask
             
             ################### The Inter-feature implementation ###########################
-            
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
             src1 = self.pre_linear1(src1) # <- linear layers
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
             src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
-            src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
+            src1 = self.pre_norm1(self.pre_dropout(src1) + src_) # <- residual layer
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
-            src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
-
+            src_left = self.pre_norm2(self.pre_dropout(src_left) + src1_[:single_eval_position])
+            src_left_ = self.pre_linear7(self.activation(self.pre_linear6(src_left)))
+            src_left_ = self.pre_norm2(src_left_) + src_left
+            src_right = self.self_attn(src1_[single_eval_position:], src_left_, src_left_)[0]
             ###############################################################################
 
             
