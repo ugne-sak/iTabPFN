@@ -136,7 +136,7 @@ class TransformerEncoderLayer(Module):
 
             src2 = torch.cat([global_tokens_src2, train_tokens_src2, eval_tokens_src2], dim=0)
 
-        elif isinstance(src_mask, int): # NOT RUN - AssertionError 
+        elif isinstance(src_mask, int):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
