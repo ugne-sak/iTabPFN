@@ -91,7 +91,7 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
         model_file, model_path, results_file = get_file(e)
         raise Exception('No checkpoint found at '+str(model_path))
 
-
+    
     print(f'Loading {model_file}')
     if only_inference:
         print('Loading model that can be used for inference only')
