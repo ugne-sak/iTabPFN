@@ -1,9 +1,5 @@
 from functools import partial
 import encoders as encoders
-# import tabpfn.encoders as encoders
-#Antanas
-# from tabpfn.transformer import TransformerModel
-# from tabpfn.utils import get_uniform_single_eval_pos_sampler
 from transformer import TransformerModel
 from utils import get_uniform_single_eval_pos_sampler
 import torch
@@ -20,13 +16,7 @@ def save_model(model, path, filename, config_sample):
         if callable(config_sample):
             config_sample = str(config_sample)
         return config_sample
-
-    #if 'num_features_used' in config_sample:
-    #    del config_sample['num_features_used']
-
-    #config_sample['num_classes_as_str'] = str(config_sample['num_classes'])
-    #del config_sample['num_classes']
-
+    
     config_sample = make_serializable(config_sample)
 
     torch.save((model.state_dict(), None, config_sample), os.path.join(path, filename))
@@ -84,8 +74,6 @@ def load_model_only_inference(path, filename, device):
     return (float('inf'), float('inf'), model), config_sample # no loss measured
 
 def load_model(path, filename, device, eval_positions, verbose):
-    # TODO: This function only restores evaluation functionality but training canät be continued. It is also not flexible.
-    # print('Loading....')
     print('!! Warning: GPyTorch must be installed !!')
     model_state, optimizer_state, config_sample = torch.load(
         os.path.join(path, filename), map_location='cpu')
@@ -197,9 +185,6 @@ def get_meta_gp_prior_hyperparameters(config):
 
 
 def get_model(config, device, should_train=True, verbose=False, state_dict=None, epoch_callback=None):
-    # import tabpfn.priors as priors
-    # from tabpfn.train import train, Losses
-    # Antanas
     import priors as priors
     from train import train, Losses
     extra_kwargs = {}
