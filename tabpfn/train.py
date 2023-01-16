@@ -126,7 +126,6 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
         ignore_steps = 0
         before_get_batch = time.time()
         assert len(dl) % aggregate_k_gradients == 0, 'Please set the number of steps per epoch s.t. `aggregate_k_gradients` divides it.'
-        # IMPORTANT: below in (data, targets, single_eval_pos) we have data=(style, x, y)
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                 cm = model.no_sync()
@@ -135,14 +134,13 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
             with cm:
                 time_to_get_batch = time.time() - before_get_batch
                 before_forward = time.time()
-                if bptt_extra_samples is None: # this is RUN: bptt_extra_samples=None
+                if bptt_extra_samples is None:
                     single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
                 else:
                     single_eval_pos = targets.shape[0] - bptt_extra_samples
 
                 with autocast(enabled=scaler is not None):
                     # If style is set to None, it should not be transferred to device
-                    # IMPORTANT: here we give inputs to model - object of class TransformerModel()
                     output = model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
                                    , single_eval_pos=single_eval_pos)
 
@@ -156,8 +154,6 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
 
                         mean_pred = output[..., 0]
                         var_pred = output[..., 1].abs()
-                        # as defined below I think: criterion = nn.GaussianNLLLoss(reduction='none', full=True)
-                        # nn.GaussianNLLLoss(input, target, ...)
                         losses = criterion(mean_pred.flatten(), targets.to(device).flatten(), var=var_pred.flatten())
                     elif isinstance(criterion, (nn.MSELoss, nn.BCEWithLogitsLoss)):
                         losses = criterion(output.flatten(), targets.to(device).flatten())
@@ -388,4 +384,3 @@ if __name__ == '__main__':
     train(prior, criterion, encoder_generator,
           y_encoder_generator=y_encoder_generator, pos_encoder_generator=pos_encoder_generator,
           **args.__dict__)
-
