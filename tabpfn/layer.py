@@ -47,7 +47,8 @@ class TransformerEncoderLayer(Module):
         super().__init__()
         self.self_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
-
+        
+        
         ############################## Inter-feature attention ############################################
         self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
         
@@ -81,7 +82,7 @@ class TransformerEncoderLayer(Module):
 
         self.activation = _get_activation_fn(activation)
 
-    def __setstate__(self, state): # not sure what it does
+    def __setstate__(self, state):
         if 'activation' not in state:
             state['activation'] = F.relu
         super().__setstate__(state)
@@ -97,7 +98,6 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
-        
         if self.pre_norm: # NOT RUN: pre_norm=False by default and is not changed in model=TransformerModel() in train.py
             src_ = self.norm1(src)
         else: # this gets RUN
@@ -129,7 +129,7 @@ class TransformerEncoderLayer(Module):
 
             src2 = torch.cat([global_tokens_src2, train_tokens_src2, eval_tokens_src2], dim=0)
 
-        elif isinstance(src_mask, int):
+        elif isinstance(src_mask, int): # NOT RUN - AssertionError 
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
@@ -140,21 +140,20 @@ class TransformerEncoderLayer(Module):
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
             src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
-            src1 = self.pre_norm1(self.pre_dropout(src1) + src_) # <- residual layer
-            
-            src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1))) # <- Feedforward
+            src1 = self.pre_norm1(self.pre_dropout(src1)) + src_ # <- residual layer
+            src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
 
-            src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0] # <- Intersample Attention
-            src_left = self.pre_norm2(self.pre_dropout(src_left) + src1_[:single_eval_position])
+            src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
+            src_left = self.pre_norm2(self.pre_dropout(src_left)) + src1_[:single_eval_position]
             src_left_ = self.pre_linear7(self.activation(self.pre_linear6(src_left)))
             src_left_ = self.pre_norm2(src_left_) + src_left
-            src_right = self.self_attn(src1_[single_eval_position:], src_left_, src_left_)[0] # <- Intersample Attention
+            
+            src_right = self.self_attn(src1_[single_eval_position:], src_left_, src_left_)[0]
             ###############################################################################
 
-            
             src2 = torch.cat([src_left, src_right], dim=0)
             
-        else: # this gets RUN 
+        else: 
             if self.recompute_attn: # recompute_attn=False by default, and is not changed in model=TransformerModel() in train.py)
                 src2 = checkpoint(self.self_attn, src_, src_, src_, src_key_padding_mask, True, src_mask)[0]
             else: # so we actually do this part
@@ -162,10 +161,10 @@ class TransformerEncoderLayer(Module):
                                       key_padding_mask=src_key_padding_mask)[0]
         src_o = self.dropout1(src2) 
         if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
-            src_o = self.norm1(src_o + src1_)
+            src_o = self.norm1(src_o) + src1_
 
         if self.pre_norm: # NOT RUN: pre_norm=False
-            src_ = self.norm2(src_o + src1_)
+            src_ = self.norm2(src_o) + src1_
         else: # this gets RUN
             src_ = src_o
             
