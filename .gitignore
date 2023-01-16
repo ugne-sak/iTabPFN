@@ -166,6 +166,9 @@ files_other/encoders.xlsx
 files_other/~$encoders.xlsx
 files_other/drawings
 tabpfn/layer_new.py
+<<<<<<< HEAD
 tabpfn/layer_old.py
+=======
+>>>>>>> InterFeatureAttention2
 tabpfn/U_attention.ipynb
 tabpfn/U_layer.ipynb

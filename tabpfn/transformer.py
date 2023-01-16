@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import Module, TransformerEncoder
-
+from einops import rearrange
 # Antnas
 # from tabpfn.layer import TransformerEncoderLayer, _get_activation_fn
 # from tabpfn.utils import SeqBN, bool_mask_to_att_mask
@@ -15,34 +15,34 @@ from utils import SeqBN, bool_mask_to_att_mask
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, encoder, n_out, ninp, nhead, nhid, nlayers, dropout=0.0, style_encoder=None, y_encoder=None,
+    def __init__(self, encoder, n_out, ninp, emsize_f, nhead, nhid, nlayers, dropout=0.0, style_encoder=None, y_encoder=None,
                  pos_encoder=None, decoder=None, input_normalization=False, init_method=None, pre_norm=False,
                  activation='gelu', recompute_attn=False, num_global_att_tokens=0, full_attention=False,
                  all_layers_same_init=False, efficient_eval_masking=True):
         super().__init__()
         self.model_type = 'Transformer'
         
-        encoder_layer_creator = lambda: TransformerEncoderLayer(ninp, nhead, nhid, dropout, activation=activation,
+        encoder_layer_creator = lambda: TransformerEncoderLayer(ninp, emsize_f, nhead, nhid, dropout, activation=activation,
                                                                 pre_norm=pre_norm, recompute_attn=recompute_attn)
         
         # Initiate n subsequent layers of transformer (initiated all the same or not)
         # all_layers_same_init=False by default and not changed later so we do TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
         self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), nlayers)\
             if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
-        self.ninp = ninp
+        self.ninp = emsize_f
         
         # Store the encoder, decoder modules
         self.encoder = encoder
         self.y_encoder = y_encoder
         self.pos_encoder = pos_encoder
-        self.decoder = decoder(ninp, nhid, n_out) if decoder is not None else nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out))
-        self.input_ln = SeqBN(ninp) if input_normalization else None
+        self.decoder = decoder(emsize_f, nhid, n_out) if decoder is not None else nn.Sequential(nn.Linear(emsize_f, nhid), nn.GELU(), nn.Linear(nhid, n_out))
+        self.input_ln = SeqBN(emsize_f) if input_normalization else None
         self.style_encoder = style_encoder
         self.init_method = init_method
         if num_global_att_tokens is not None: 
             assert not full_attention
         
-        self.global_att_embeddings = nn.Embedding(num_global_att_tokens, ninp) if num_global_att_tokens else None # seems like global_att_embeddings=None
+        self.global_att_embeddings = nn.Embedding(num_global_att_tokens, emsize_f) if num_global_att_tokens else None # seems like global_att_embeddings=None
         self.full_attention = full_attention
         self.efficient_eval_masking = efficient_eval_masking
 
@@ -148,29 +148,43 @@ class TransformerModel(nn.Module):
                 nn.init.zeros_(attn.out_proj.bias)
 
     def forward(self, src, src_mask=None, single_eval_pos=None):
+        """Forwards the points through the transformer
+        
+        *This is where we need to insert our inter-feature attention.* 
+
+        Args:
+            src (tuple): (categorical features (optional), x, y)
+            src_mask (tensor, optional): Input mask. Defaults to None - it will be generated within
+            single_eval_pos (int, optional): Determines which data point is evaluated. Defaults to None - last data point
+
+        Returns:
+            tensor: output
+        """
         assert isinstance(src, tuple), 'inputs (src) have to be given as (x,y) or (style,x,y) tuple'
 
         if len(src) == 2: # (x,y) and no style
             src = (None,) + src
 
-        style_src, x_src, y_src = src
-        x_src = self.encoder(x_src)
-        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src)
+        style_src, x_src, y_src = src # Categorical features, x numerical, and y
+        x_src = self.encoder(x_src) # Numerical encoding of x
+        y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
-            torch.tensor([], device=x_src.device)
+            torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
+        
+        ### Donn't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
-            self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1)
-
+            self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1) 
+            
         if src_mask is not None: assert self.global_att_embeddings is None or isinstance(src_mask, tuple)
-        if src_mask is None: # this is RUN: default src_mask=None not changed it seems
-            if self.global_att_embeddings is None: # this is RUN: global_att_embeddings=None it seems
-                full_len = len(x_src) + len(style_src)
+        if src_mask is None: # this is RUN by default: src_mask=None 
+            if self.global_att_embeddings is None: # this is RUN by default: global_att_embeddings=None
+                full_len = len(x_src) + len(style_src) 
                 if self.full_attention:
-                    src_mask = bool_mask_to_att_mask(torch.ones((full_len, full_len), dtype=torch.bool)).to(x_src.device)
-                elif self.efficient_eval_masking:
+                    src_mask = bool_mask_to_att_mask(torch.ones((full_len, full_len), dtype=torch.bool)).to(x_src.device) # Full attention mask is create - f x f tensor with 0.0
+                elif self.efficient_eval_masking: # This splits the data set into training and evaluation - mask a single number
                     src_mask = single_eval_pos + len(style_src)
                 else:
-                    src_mask = self.generate_D_q_matrix(full_len, len(x_src) - single_eval_pos).to(x_src.device)
+                    src_mask = self.generate_D_q_matrix(full_len, len(x_src) - single_eval_pos).to(x_src.device) # Creates 
             else:
                 src_mask_args = (self.global_att_embeddings.num_embeddings,
                                  len(x_src) + len(style_src),
@@ -179,7 +193,7 @@ class TransformerModel(nn.Module):
                             self.generate_global_att_trainset_matrix(*src_mask_args).to(x_src.device),
                             self.generate_global_att_query_matrix(*src_mask_args).to(x_src.device))
 
-        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos]
+        train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
 
         if self.input_ln is not None:

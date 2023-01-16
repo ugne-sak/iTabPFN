@@ -108,11 +108,10 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
 
     models_in_memory = {}
 
-    def __init__(self, device='cpu', base_path=pathlib.Path(__file__).parent.parent.resolve(), epoch = 0, i = 0, model_string='',
+    def __init__(self, device='cpu', base_path=pathlib.Path(__file__).parent.parent.resolve(), epoch = 0,i=0, model_string='',
                  N_ensemble_configurations=3, combine_preprocessing=False, no_preprocess_mode=False,
                  multiclass_decoder='permutation', feature_shift_decoder=True, only_inference=True, seed=0):
         # Model file specification (Model name, Epoch)
-        i = 0
         model_key = model_string+'|'+str(device)
         if model_string in self.models_in_memory:
             model, c, results_file = self.models_in_memory[model_key]

@@ -58,7 +58,7 @@ def load_model_only_inference(path, filename, device):
     n_out = config_sample['max_num_classes']
 
     device = device if torch.cuda.is_available() else 'cpu:0'
-    encoder = encoder(config_sample['num_features'], config_sample['emsize'])
+    encoder = encoder(config_sample['num_features'], config_sample['emsize_f'])
 
     nhid = config_sample['emsize'] * config_sample['nhid_factor']
     y_encoder_generator = encoders.get_Canonical(config_sample['max_num_classes']) \
@@ -67,8 +67,8 @@ def load_model_only_inference(path, filename, device):
     assert config_sample['max_num_classes'] > 2
     loss = torch.nn.CrossEntropyLoss(reduction='none', weight=torch.ones(int(config_sample['max_num_classes'])))
 
-    model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['nhead'], nhid,
-                             config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize']),
+    model = TransformerModel(encoder, n_out, config_sample['emsize'], config_sample['emsize_f'], config_sample['nhead'], nhid,
+                             config_sample['nlayers'], y_encoder=y_encoder_generator(1, config_sample['emsize_f']),
                              dropout=config_sample['dropout'],
                              efficient_eval_masking=config_sample['efficient_eval_masking'])
 
@@ -103,6 +103,7 @@ def load_model(path, filename, device, eval_positions, verbose):
     config_sample['num_features_used'] = lambda: config_sample['num_features']
     config_sample['num_classes_in_training'] = config_sample['num_classes']
     config_sample['num_classes'] = 2
+    config_sample['emsize_f'] = config_sample['emsize_f']
     config_sample['batch_size_in_training'] = config_sample['batch_size']
     config_sample['batch_size'] = 1
     config_sample['bptt_in_training'] = config_sample['bptt']
@@ -181,7 +182,6 @@ def get_gp_prior_hyperparameters(config):
 def get_meta_gp_prior_hyperparameters(config):
     from priors.utils import trunc_norm_sampler_f
     # from tabpfn.priors.utils import trunc_norm_sampler_f
-
     config = {hp: (list(config[hp].values())[0]) if type(config[hp]) is dict else config[hp] for hp in config}
 
     if "outputscale_mean" in config:
@@ -300,6 +300,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
                   , encoder
                   , style_encoder_generator = encoders.StyleEncoder if use_style else None
                   , emsize=config['emsize']
+                  , emsize_f = config['emsize_f']
                   , nhead=config['nhead']
                   # For unsupervised learning change to NanHandlingEncoder
                   , y_encoder_generator= encoders.get_Canonical(config['max_num_classes']) if config.get('canonical_y_encoder', False) else encoders.Linear
