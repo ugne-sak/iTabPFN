@@ -17,7 +17,6 @@ class TransformerEncoderLayer(Module):
     Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in
     Neural Information Processing Systems, pages 6000-6010. Users may modify or implement
     in a different way during application.
-
     Args:
         d_model: the number of expected features in the input (required).
         nhead: the number of heads in the multiheadattention models (required).
@@ -27,12 +26,10 @@ class TransformerEncoderLayer(Module):
         layer_norm_eps: the eps value in layer normalization components (default=1e-5).
         batch_first: If ``True``, then the input and output tensors are provided
             as (batch, seq, feature). Default: ``False``.
-
     Examples::
         >>> encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
         >>> src = torch.rand(10, 32, 512)
         >>> out = encoder_layer(src)
-
     Alternatively, when ``batch_first`` is ``True``:
         >>> encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8, batch_first=True)
         >>> src = torch.rand(32, 10, 512)
@@ -89,12 +86,10 @@ class TransformerEncoderLayer(Module):
 
     def forward(self, src: Tensor, src_mask: Optional[Tensor] = None, src_key_padding_mask: Optional[Tensor] = None) -> Tensor:
         r"""Pass the input through the encoder layer.
-
         Args:
             src: the sequence to the encoder layer (required).
             src_mask: the mask for the src sequence (optional).
             src_key_padding_mask: the mask for the src keys per batch (optional).
-
         Shape:
             see the docs in Transformer class.
         """
