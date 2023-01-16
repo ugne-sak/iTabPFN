@@ -9,7 +9,7 @@ Please install requirements file with
 pip install -r requirements.txt
 ```
 
-For demonstration, please have a look at the demo.ipynb
+For demonstration, please have a look at the demo.ipynb in the tabpfn file
 
 Please ensure that the path to the cpkt file is correct.
 
