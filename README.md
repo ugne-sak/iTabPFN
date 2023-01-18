@@ -1,7 +1,8 @@
 # iTabPFN
 
 
-Interfeature TabPFN implementation. 
+
+# Instructions
 
 Please ensure that Python==3.7.15 is installed in your environment.
 
@@ -11,6 +12,8 @@ Install the requirements file with
 pip install -r requirements.txt
 conda install -c conda-forge lightgbm
 ```
+
+
 
 ## Demo
 For demonstration of iTabPFN performance on real-world classification task, please have a look at the demo.ipynb in the /tabpfn folder.
