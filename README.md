@@ -5,7 +5,7 @@ Interfeature TabPFN implementation.
 
 Please ensure that Python==3.7.15 is installed in your environment.
 
-Next, please install the requirements file with 
+To install the requirements file with 
 
 ```bash
 pip install -r requirements.txt
