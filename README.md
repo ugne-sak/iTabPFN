@@ -1,6 +1,6 @@
 # iTabPFN
 
-
+![Architecture](iTabPFN_architecture.png)
 
 # Instructions
 
