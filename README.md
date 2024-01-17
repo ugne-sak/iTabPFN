@@ -1,6 +1,6 @@
 # iTabPFN
 
-iTabPFN is a Transformer designed to solve small classifiation tasks in tabular setting within seconds. Even with such increase in speed, the performance of iTabPFN is comperable to baseline methods such as tree-based models (XGBoost, LightGBM). The architecture of iTabPFN is built upon [TabPFN](https://arxiv.org/abs/2207.01848). Our main contribution is an extension of TabPFN Transformer with an additional interfeature attention component, designed to effectively leverage on the row-column structure of tabular data.
+iTabPFN is a Transformer designed to solve small classification tasks in tabular setting within seconds. Even with such an increase in speed, the performance of iTabPFN is comparable to baseline methods such as tree-based models (XGBoost, LightGBM). The architecture of iTabPFN is built upon [TabPFN](https://arxiv.org/abs/2207.01848). Our main contribution is an extension of TabPFN Transformer with an additional interfeature attention component, designed to effectively leverage on the row-column structure of tabular data.
 
 <p align="center">
 <img src="iTabPFN_arcitecture.png" width="70%" height="70%" />
